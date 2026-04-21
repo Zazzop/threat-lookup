@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Threat Intel Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #080c14;
+    --bg2:      #0d1321;
+    --bg3:      #111827;
+    --border:   #1e2d45;
+    --border2:  #243552;
+    --text:     #c8d8f0;
+    --text2:    #6b85a8;
+    --text3:    #3d526b;
+    --cyan:     #00d4ff;
+    --cyan-dim: #0a3d52;
+    --green:    #00e676;
+    --green-dim:#0a3320;
+    --red:      #ff4757;
+    --red-dim:  #3d0e14;
+    --amber:    #ffa502;
+    --amber-dim:#3d2600;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--cyan);
+    letter-spacing: -0.5px;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid var(--cyan);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-meta span { color: var(--text2); }
+
+  /* ─── MAIN LAYOUT ─── */
+  main { max-width: 1400px; margin: 0 auto; padding: 32px; }
+
+  /* ─── IMPORT PANEL ─── */
+  .import-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    background: var(--cyan);
+    border-radius: 2px;
+  }
+
+  .import-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .drop-zone {
+    border: 1.5px dashed var(--border2);
+    border-radius: 8px;
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 140px;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--cyan);
+    background: rgba(0, 212, 255, 0.03);
+  }
+
+  .drop-icon {
+    font-size: 28px;
+    opacity: 0.5;
+  }
+
+  .drop-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .drop-sub {
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .btn-file {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: all 0.15s;
+  }
+
+  .btn-file:hover { background: var(--cyan-dim); border-color: var(--cyan); }
+
+  .paste-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 14px;
+    resize: none;
+    height: 140px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.7;
+  }
+
+  textarea::placeholder { color: var(--text3); }
+  textarea:focus { border-color: var(--border2); }
+
+  .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--cyan);
+    color: #000;
+    border-color: var(--cyan);
+  }
+
+  .btn-primary:hover { background: #00b8d9; }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border2);
+    color: var(--text2);
+  }
+
+  .btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+
+  .btn-danger {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--red);
+  }
+
+  .btn-danger:hover { border-color: var(--red); background: var(--red-dim); }
+
+  /* ─── API KEY PANEL ─── */
+  .api-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+
+  .api-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+    margin-top: 14px;
+  }
+
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+  }
+
+  .field-input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field-input:focus { border-color: var(--border2); }
+  .field-input::placeholder { color: var(--text3); }
+
+  /* ─── STATS BAR ─── */
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .stat-pill {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .stat-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .dot-all    { background: var(--text2); }
+  .dot-m      { background: var(--red); }
+  .dot-s      { background: var(--amber); }
+  .dot-c      { background: var(--green); }
+  .dot-u      { background: var(--text3); }
+
+  .stat-num { font-weight: 600; color: var(--text); }
+
+  /* ─── TOOLBAR ─── */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .filter-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover { border-color: var(--border2); color: var(--text); }
+
+  .filter-btn.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: var(--cyan-dim);
+  }
+
+  .action-group { display: flex; gap: 8px; }
+
+  /* ─── PROGRESS ─── */
+  .progress-wrap {
+    background: var(--bg3);
+    border-radius: 3px;
+    height: 3px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    border-radius: 3px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+
+  /* ─── TABLE ─── */
+  .table-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .table-scroll { overflow-x: auto; max-height: 600px; overflow-y: auto; }
+
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+
+  thead { position: sticky; top: 0; z-index: 10; }
+
+  th {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text3);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  th:hover { color: var(--text2); }
+  th .sort-icon { margin-left: 4px; opacity: 0.4; }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(30, 45, 69, 0.5);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+
+  .cell-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    width: 36px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .badge-ip  { background: rgba(0,212,255,0.08); color: var(--cyan); border: 1px solid rgba(0,212,255,0.2); }
+  .badge-dom { background: rgba(0,230,118,0.08); color: var(--green); border: 1px solid rgba(0,230,118,0.2); }
+
+  .status-select {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.15s;
+  }
+
+  .status-select:focus { border-color: var(--border2); }
+  .status-select.malicious { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+  .status-select.suspicious { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
+  .status-select.clean { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .status-select.unknown { border-color: var(--border); color: var(--text3); }
+
+  .cell-addr {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .links-cell {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 7px;
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .link-btn:hover { border-color: var(--border2); color: var(--text); }
+  .link-btn.pa:hover { border-color: #ff6b35; color: #ff6b35; background: rgba(255,107,53,0.06); }
+  .link-btn.vt:hover { border-color: #4285f4; color: #4285f4; background: rgba(66,133,244,0.06); }
+  .link-btn.ab:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+  .link-btn.sh:hover { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
+  .link-btn.tl:hover { border-color: #00bcd4; color: #00bcd4; background: rgba(0,188,212,0.06); }
+
+  .vt-score {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .vt-score.bad { color: var(--red); }
+  .vt-score.warn { color: var(--amber); }
+  .vt-score.ok { color: var(--green); }
+  .vt-score.pend { color: var(--text3); font-weight: 400; font-size: 11px; }
+
+  .note-input {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 6px;
+    width: 100%;
+    min-width: 140px;
+    outline: none;
+    transition: all 0.15s;
+  }
+
+  .note-input:focus {
+    border-color: var(--border);
+    background: var(--bg3);
+    color: var(--text);
+  }
+
+  /* ─── EMPTY STATE ─── */
+  .empty-state {
+    padding: 80px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .empty-icon { font-size: 40px; opacity: 0.2; }
+
+  .empty-text {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text3);
+  }
+
+  /* ─── VT PANEL ─── */
+  .vt-info {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  .vt-info a { color: var(--cyan); text-decoration: none; }
+  .vt-info a:hover { text-decoration: underline; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    margin-top: 40px;
+    padding: 24px 32px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  footer a { color: var(--text2); text-decoration: none; }
+  footer a:hover { color: var(--cyan); }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.25s;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    main { padding: 16px; }
+    .import-grid { grid-template-columns: 1fr; }
+    .api-row { grid-template-columns: 1fr; }
+    header { padding: 0 16px; }
+    .header-meta { display: none; }
+  }
+
+  input[type="file"] { display: none; }
+
+  .scanning { animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    Threat Intel Lookup
+  </div>
+  <div class="header-meta">
+    <span id="hdr-count">0 gösterge</span>
+    <span id="hdr-time">—</span>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- IMPORT PANEL -->
+  <div class="import-panel">
+    <div class="panel-title">Veri Girişi</div>
+    <div class="import-grid">
+      <!-- Drop Zone -->
+      <div>
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon">📂</div>
+          <div class="drop-label">Dosyayı buraya sürükleyin</div>
+          <div class="drop-sub">.txt, .csv, .log — defanged format desteklenir</div>
+          <input type="file" id="fileInput" accept=".txt,.csv,.log,.text">
+          <button class="btn-file" onclick="document.getElementById('fileInput').click()">Dosya Seç</button>
+        </div>
+        <div style="margin-top:10px; font-family:var(--mono); font-size:10px; color:var(--text3); line-height:1.8;">
+          <span style="color:var(--text2);">Desteklenen format örnekleri:</span><br>
+          212[.]11[.]64[.]105 &nbsp;·&nbsp; helper[.]leuleu[.]net<br>
+          45.32.144.255 &nbsp;·&nbsp; fortinet-vpn[.]com<br>
+          <span style="color:var(--text3);">Her satıra bir IP veya domain</span>
+        </div>
+      </div>
+
+      <!-- Paste Area -->
+      <div class="paste-area">
+        <textarea id="pasteArea" placeholder="IP veya domain listesini yapıştırın...&#10;&#10;Örnek:&#10;212[.]11[.]64[.]105&#10;helper[.]leuleu[.]net&#10;45.76.155.202"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="parseInput()">⟶ Analiz Et</button>
+          <button class="btn btn-ghost" onclick="loadSample()">Örnek Yükle</button>
+          <button class="btn btn-danger" onclick="clearAll()">Temizle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API KEY PANEL -->
+  <div class="api-panel">
+    <div class="panel-title">VirusTotal API (İsteğe Bağlı)</div>
+    <div class="vt-info">
+      Ücretsiz API anahtarı: <a href="https://www.virustotal.com/gui/join-us" target="_blank">virustotal.com/gui/join-us</a> &nbsp;·&nbsp;
+      Limit: 4 istek/dakika &nbsp;·&nbsp; Anahtar tarayıcınızda saklanır
+    </div>
+    <div class="api-row">
+      <div class="field-group">
+        <span class="field-label">VirusTotal API Key</span>
+        <input type="password" class="field-input" id="vtKey" placeholder="64 karakterlik API anahtarınız">
+      </div>
+      <div class="field-group">
+        <span class="field-label">Sorgu Hızı</span>
+        <select class="field-input" id="vtRate">
+          <option value="15000">4/dk — Ücretsiz</option>
+          <option value="5000">12/dk — Premium</option>
+          <option value="1000">60/dk — Enterprise</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" onclick="saveKey()">Kaydet</button>
+        <button class="btn btn-primary" onclick="runVT()" id="btnVT">VT Tara</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div id="resultsSection" style="display:none;">
+
+    <!-- STATS + TOOLBAR -->
+    <div class="stats-bar" id="statsBar"></div>
+
+    <div class="toolbar">
+      <div class="filter-group" id="filterGroup">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Tümü</button>
+        <button class="filter-btn" onclick="setFilter('malicious',this)">Zararlı</button>
+        <button class="filter-btn" onclick="setFilter('suspicious',this)">Şüpheli</button>
+        <button class="filter-btn" onclick="setFilter('clean',this)">Temiz</button>
+        <button class="filter-btn" onclick="setFilter('unknown',this)">Bilinmiyor</button>
+        <button class="filter-btn" onclick="setFilter('IP',this)">IP</button>
+        <button class="filter-btn" onclick="setFilter('Domain',this)">Domain</button>
+      </div>
+      <div class="action-group">
+        <button class="btn btn-ghost" onclick="openAllPA()">PA'da Aç ↗</button>
+        <button class="btn btn-ghost" onclick="exportCSV()">CSV İndir</button>
+        <button class="btn btn-ghost" onclick="copyIOC()">IOC Kopyala</button>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th onclick="sortBy('type')">Tür <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('value')">IP / Alan Adı <span class="sort-icon">↕</span></th>
+              <th onclick="sortBy('status')">Durum <span class="sort-icon">↕</span></th>
+              <th>VT Skoru</th>
+              <th>Kaynaklar</th>
+              <th>Not</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="7"><div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <div class="empty-text">Henüz gösterge yüklenmedi</div>
+            </div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Palo Alto · VirusTotal · AbuseIPDB · Shodan · Talos Intelligence &nbsp;|&nbsp;
+  <a href="https://urlfiltering.paloaltonetworks.com/query/" target="_blank">PA URL Lookup</a> &nbsp;·&nbsp;
+  <a href="https://github.com" target="_blank">GitHub</a>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── STATE ─── */
+let indicators = [];
+let activeFilter = 'all';
+let sortKey = null;
+let sortDir = 1;
+
+/* ─── DEFANG / PARSE ─── */
+function refang(s) {
+  return s
+    .replace(/\[\.\]/g, '.')
+    .replace(/\[dot\]/gi, '.')
+    .replace(/hxxp/gi, 'http')
+    .replace(/\[\]/g, '')
+    .trim();
+}
+
+function isIP(s) {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(s) ||
+         /^([0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}$/.test(s);
+}
+
+function isDomain(s) {
+  return /^[a-zA-Z0-9][a-zA-Z0-9\-\.]{1,253}\.[a-zA-Z]{2,}$/.test(s) && !isIP(s);
+}
+
+function parseLines(text) {
+  const results = [];
+  const seen = new Set();
+  const lines = text.split(/[\n\r,;]+/);
+  for (let raw of lines) {
+    const s = refang(raw.replace(/^[\s\`'"]+|[\s\`'"]+$/g, '').split(/\s+/)[0]);
+    if (!s || s.length < 4) continue;
+    if (isIP(s) || isDomain(s)) {
+      if (!seen.has(s)) {
+        seen.add(s);
+        results.push({ value: s, type: isIP(s) ? 'IP' : 'Domain', status: 'unknown', vtScore: null, note: '' });
+      }
+    }
+  }
+  return results;
+}
+
+/* ─── FILE INPUT ─── */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+});
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) readFile(e.target.files[0]);
+});
+
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('pasteArea').value = e.target.result;
+    parseInput();
+  };
+  reader.readAsText(file);
+}
+
+/* ─── PARSE INPUT ─── */
+function parseInput() {
+  const text = document.getElementById('pasteArea').value;
+  if (!text.trim()) { toast('Lütfen veri girin'); return; }
+  const parsed = parseLines(text);
+  if (!parsed.length) { toast('Geçerli IP veya domain bulunamadı'); return; }
+
+  // Merge with existing (keep statuses if re-parsed)
+  const existing = {};
+  for (const i of indicators) existing[i.value] = i;
+
+  indicators = parsed.map(p => existing[p.value] ? { ...existing[p.value] } : p);
+  activeFilter = 'all';
+  sortKey = null;
+
+  render();
+  document.getElementById('resultsSection').style.display = 'block';
+  document.getElementById('hdr-count').textContent = `${indicators.length} gösterge`;
+  document.getElementById('hdr-time').textContent = new Date().toLocaleTimeString('tr-TR');
+  toast(`${indicators.length} gösterge yüklendi`);
+}
+
+/* ─── SAMPLE DATA ─── */
+function loadSample() {
+  document.getElementById('pasteArea').value = `212[.]11[.]64[.]105
+204[.]10[.]160[.]190
+45[.]32[.]144[.]255
+194[.]76[.]226[.]93
+helper[.]leuleu[.]net
+claude-code-cmd[.]squarespace[.]com
+checkpoint-vpn[.]com
+forticlient-for-mac[.]com
+fortinet-vpn[.]com
+ivanti-vpn[.]org
+securedsnmail[.]com
+suitecorporate[.]com
+checkmarx[.]zone
+models[.]litellm[.]cloud
+cpajoliette[.]com`;
+  parseInput();
+}
+
+/* ─── LINK BUILDERS ─── */
+function paLink(v) { return `https://urlfiltering.paloaltonetworks.com/query/${encodeURIComponent(v)}`; }
+function vtLink(v) {
+  if (isIP(v)) return `https://www.virustotal.com/gui/ip-address/${v}`;
+  return `https://www.virustotal.com/gui/domain/${v}`;
+}
+function abLink(v) {
+  if (isIP(v)) return `https://www.abuseipdb.com/check/${v}`;
+  return `https://www.abuseipdb.com/whois/${v}`;
+}
+function shLink(v) {
+  if (isIP(v)) return `https://www.shodan.io/host/${v}`;
+  return `https://www.shodan.io/search?query=${v}`;
+}
+function tlLink(v) { return `https://talosintelligence.com/reputation_center/lookup?search=${encodeURIComponent(v)}`; }
+
+/* ─── RENDER ─── */
+function getFiltered() {
+  let list = indicators;
+  if (activeFilter === 'malicious') list = list.filter(i => i.status === 'malicious');
+  else if (activeFilter === 'suspicious') list = list.filter(i => i.status === 'suspicious');
+  else if (activeFilter === 'clean') list = list.filter(i => i.status === 'clean');
+  else if (activeFilter === 'unknown') list = list.filter(i => i.status === 'unknown');
+  else if (activeFilter === 'IP') list = list.filter(i => i.type === 'IP');
+  else if (activeFilter === 'Domain') list = list.filter(i => i.type === 'Domain');
+  if (sortKey) {
+    list = [...list].sort((a, b) => {
+      let av = a[sortKey] || '', bv = b[sortKey] || '';
+      return String(av).localeCompare(String(bv)) * sortDir;
+    });
+  }
+  return list;
+}
+
+function vtScoreHtml(item) {
+  if (item.vtScore === null) return '<span class="vt-score pend">—</span>';
+  if (item.vtScore.error) return `<span class="vt-score pend" title="${item.vtScore.error}">Hata</span>`;
+  const mal = item.vtScore.malicious;
+  const sus = item.vtScore.suspicious;
+  const tot = item.vtScore.total;
+  const cls = mal > 3 ? 'bad' : mal > 0 || sus > 1 ? 'warn' : 'ok';
+  return `<span class="vt-score ${cls}">${mal}/${tot}</span>`;
+}
+
+function render() {
+  const rows = getFiltered();
+  const tbody = document.getElementById('tableBody');
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-text">Bu filtrede gösterge yok</div>
+    </div></td></tr>`;
+    updateStats();
+    return;
+  }
+
+  tbody.innerHTML = rows.map((item, idx) => {
+    const ri = indicators.indexOf(item);
+    const statusClass = item.status;
+    return `<tr>
+      <td class="cell-num">${ri + 1}</td>
+      <td><span class="badge ${item.type === 'IP' ? 'badge-ip' : 'badge-dom'}">${item.type}</span></td>
+      <td class="cell-addr" title="${item.value}">${item.value}</td>
+      <td>
+        <select class="status-select ${statusClass}" onchange="setStatus(${ri}, this.value, this)">
+          <option value="unknown"  ${item.status==='unknown'  ?'selected':''}>Bilinmiyor</option>
+          <option value="malicious"${item.status==='malicious'?'selected':''}>Zararlı</option>
+          <option value="suspicious"${item.status==='suspicious'?'selected':''}>Şüpheli</option>
+          <option value="clean"   ${item.status==='clean'    ?'selected':''}>Temiz</option>
+        </select>
+      </td>
+      <td>${vtScoreHtml(item)}</td>
+      <td>
+        <div class="links-cell">
+          <a class="link-btn pa" href="${paLink(item.value)}" target="_blank" title="Palo Alto URL Filtering">PA</a>
+          <a class="link-btn vt" href="${vtLink(item.value)}" target="_blank" title="VirusTotal">VT</a>
+          <a class="link-btn ab" href="${abLink(item.value)}" target="_blank" title="AbuseIPDB">AB</a>
+          <a class="link-btn sh" href="${shLink(item.value)}" target="_blank" title="Shodan">SH</a>
+          <a class="link-btn tl" href="${tlLink(item.value)}" target="_blank" title="Talos Intelligence">TL</a>
+        </div>
+      </td>
+      <td>
+        <input class="note-input" type="text" value="${item.note || ''}" placeholder="Not ekle..."
+          onchange="indicators[${ri}].note = this.value">
+      </td>
+    </tr>`;
+  }).join('');
+
+  updateStats();
+}
+
+/* ─── STATS ─── */
+function updateStats() {
+  const m = indicators.filter(i => i.status === 'malicious').length;
+  const s = indicators.filter(i => i.status === 'suspicious').length;
+  const c = indicators.filter(i => i.status === 'clean').length;
+  const u = indicators.filter(i => i.status === 'unknown').length;
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-pill"><span class="stat-dot dot-all"></span><span class="stat-num">${indicators.length}</span> Toplam</div>
+    <div class="stat-pill"><span class="stat-dot dot-m"></span><span class="stat-num">${m}</span> Zararlı</div>
+    <div class="stat-pill"><span class="stat-dot dot-s"></span><span class="stat-num">${s}</span> Şüpheli</div>
+    <div class="stat-pill"><span class="stat-dot dot-c"></span><span class="stat-num">${c}</span> Temiz</div>
+    <div class="stat-pill"><span class="stat-dot dot-u"></span><span class="stat-num">${u}</span> Bilinmiyor</div>
+  `;
+}
+
+/* ─── STATUS CHANGE ─── */
+function setStatus(idx, val, sel) {
+  indicators[idx].status = val;
+  sel.className = `status-select ${val}`;
+  updateStats();
+}
+
+/* ─── FILTER ─── */
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+/* ─── SORT ─── */
+function sortBy(key) {
+  if (sortKey === key) sortDir *= -1;
+  else { sortKey = key; sortDir = 1; }
+  render();
+}
+
+/* ─── OPEN ALL PA ─── */
+function openAllPA() {
+  const rows = getFiltered().slice(0, 20);
+  if (!rows.length) { toast('Gösterilecek gösterge yok'); return; }
+  rows.forEach((item, i) => setTimeout(() => window.open(paLink(item.value), '_blank'), i * 300));
+  toast(`${rows.length} sekme açılıyor (max 20)...`);
+}
+
+/* ─── VIRUSTOTAL API ─── */
+function saveKey() {
+  const key = document.getElementById('vtKey').value.trim();
+  if (!key) { toast('API anahtarı boş'); return; }
+  localStorage.setItem('vt_key', key);
+  toast('API anahtarı kaydedildi');
+}
+
+async function runVT() {
+  const key = document.getElementById('vtKey').value.trim() || localStorage.getItem('vt_key');
+  if (!key) { toast('Önce VirusTotal API anahtarı girin'); return; }
+  if (!indicators.length) { toast('Önce gösterge yükleyin'); return; }
+
+  document.getElementById('vtKey').value = key;
+  const btn = document.getElementById('btnVT');
+  btn.disabled = true;
+  btn.textContent = 'Taranıyor...';
+  btn.classList.add('scanning');
+
+  const wrap = document.getElementById('progressWrap');
+  const bar = document.getElementById('progressBar');
+  wrap.style.display = 'block';
+
+  const rate = parseInt(document.getElementById('vtRate').value);
+  let done = 0;
+
+  for (let i = 0; i < indicators.length; i++) {
+    const item = indicators[i];
+    try {
+      const endpoint = item.type === 'IP'
+        ? `https://www.virustotal.com/api/v3/ip_addresses/${item.value}`
+        : `https://www.virustotal.com/api/v3/domains/${item.value}`;
+
+      const res = await fetch(endpoint, { headers: { 'x-apikey': key } });
+      if (res.status === 429) { toast('API limiti aşıldı, bekleniyor...'); await sleep(60000); continue; }
+      if (!res.ok) { indicators[i].vtScore = { error: `HTTP ${res.status}` }; }
+      else {
+        const data = await res.json();
+        const stats = data?.data?.attributes?.last_analysis_stats || {};
+        indicators[i].vtScore = {
+          malicious: stats.malicious || 0,
+          suspicious: stats.suspicious || 0,
+          total: Object.values(stats).reduce((a,b) => a+b, 0)
+        };
+        // Auto-set status based on VT score
+        const m = indicators[i].vtScore.malicious;
+        if (m > 3 && indicators[i].status === 'unknown') indicators[i].status = 'malicious';
+        else if (m > 0 && indicators[i].status === 'unknown') indicators[i].status = 'suspicious';
+      }
+    } catch(e) {
+      indicators[i].vtScore = { error: e.message };
+    }
+
+    done++;
+    bar.style.width = (done / indicators.length * 100) + '%';
+    render();
+    await sleep(rate);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'VT Tara';
+  btn.classList.remove('scanning');
+  wrap.style.display = 'none';
+  toast('VirusTotal taraması tamamlandı');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ─── EXPORT ─── */
+function exportCSV() {
+  if (!indicators.length) { toast('Dışa aktarılacak veri yok'); return; }
+  const rows = getFiltered();
+  const header = ['#','Tür','IP/Domain','Durum','VT Zararlı','VT Toplam','PA Link','Not'];
+  const lines = [header.join(',')];
+  rows.forEach((item, i) => {
+    const vt = item.vtScore && !item.vtScore.error
+      ? `${item.vtScore.malicious},${item.vtScore.total}` : ',';
+    lines.push([
+      indicators.indexOf(item)+1,
+      item.type,
+      `"${item.value}"`,
+      item.status,
+      ...vt.split(','),
+      `"${paLink(item.value)}"`,
+      `"${(item.note||'').replace(/"/g,'""')}"`
+    ].join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `threat-lookup-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('CSV indirildi');
+}
+
+function copyIOC() {
+  const malicious = indicators.filter(i => i.status === 'malicious' || i.status === 'suspicious');
+  if (!malicious.length) { toast('Zararlı/şüpheli gösterge yok'); return; }
+  navigator.clipboard.writeText(malicious.map(i => i.value).join('\n'));
+  toast(`${malicious.length} IOC kopyalandı`);
+}
+
+/* ─── CLEAR ─── */
+function clearAll() {
+  indicators = [];
+  document.getElementById('pasteArea').value = '';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('hdr-count').textContent = '0 gösterge';
+  document.getElementById('hdr-time').textContent = '—';
+  toast('Temizlendi');
+}
+
+/* ─── TOAST ─── */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ─── INIT ─── */
+const savedKey = localStorage.getItem('vt_key');
+if (savedKey) document.getElementById('vtKey').value = savedKey;
+</script>
+</body>
+</html>
